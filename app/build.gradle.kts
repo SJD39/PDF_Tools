@@ -40,6 +40,11 @@ android {
 }
 
 dependencies {
+    // Compose 启动器（相册/相机必备）
+    implementation("androidx.activity:activity-compose:1.9.3")
+
+    // 图片加载显示
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
