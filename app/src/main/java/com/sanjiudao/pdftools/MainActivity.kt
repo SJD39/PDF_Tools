@@ -23,13 +23,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -132,30 +134,33 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
     }
 
     Box(modifier.fillMaxSize()){
+        val scrollState = rememberScrollState()
         Column{
             Top_Title("图片 转 PDF")
             Button(onClick = { multiplePhotoPicker.launch("image/*")}, Modifier.padding(3.dp)) {
                 Text("选择图片")
             }
-            selectedImageUris.forEachIndexed {index, uri ->
-                Image(
-                    painter = rememberAsyncImagePainter(uri),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(200.dp)
-                        .padding(end = 8.dp)
-                )
-                Button(onClick = {selectedImageUris.remove(selectedImageUris[index])}, Modifier.padding(3.dp)) {
-                    Text("移除")
+            Column(modifier.verticalScroll(scrollState).fillMaxWidth()){
+                selectedImageUris.forEachIndexed {index, uri ->
+                    Image(
+                        painter = rememberAsyncImagePainter(uri),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(200.dp)
+                            .padding(end = 8.dp)
+                    )
+                    Button(onClick = {selectedImageUris.remove(selectedImageUris[index])}, Modifier.padding(3.dp)) {
+                        Text("移除")
+                    }
                 }
-            }
-            Button(onClick = {
-                if (selectedImageUris.isEmpty()) return@Button
-                scope.launch(Dispatchers.IO) {
-                    generatePdfFromImages(context, selectedImageUris)
+                Button(onClick = {
+                    if (selectedImageUris.isEmpty()) return@Button
+                    scope.launch(Dispatchers.IO) {
+                        generatePdfFromImages(context, selectedImageUris)
+                    }
+                }) {
+                    Text("生成PDF")
                 }
-            }) {
-                Text("生成PDF")
             }
         }
     }
@@ -224,10 +229,10 @@ private fun savePdfToFile(
         outputStream = context.contentResolver.openOutputStream(uri!!)
 
         pdfDocument.writeTo(outputStream)
-        android.util.Log.d("PDF", "PDF 生成成功：$fileName")
+        Log.d("PDF", "PDF 生成成功：$fileName")
     } catch (e: Exception) {
         e.printStackTrace()
-        android.util.Log.e("PDF", "PDF 生成失败：${e.message}")
+        Log.e("PDF", "PDF 生成失败：${e.message}")
     } finally {
         outputStream?.close()
     }
