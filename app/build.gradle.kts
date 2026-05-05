@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.sanjiudao.pdftools"
-        minSdk = 31
+        minSdk = 34
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -41,10 +41,10 @@ android {
 
 dependencies {
     // Compose 启动器（相册/相机必备）
-    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation(libs.androidx.activity.compose.v193)
 
     // 图片加载显示
-    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation(libs.coil.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

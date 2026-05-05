@@ -125,11 +125,12 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
 
     val selectedImageUris = remember { mutableStateListOf<Uri>() }
 
+    // 创建启动器
     val multiplePhotoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         selectedImageUris.addAll(uris)
-        Log.i("23", selectedImageUris.toString())
+        Log.i("log", selectedImageUris.toString())
     }
 
     Box(modifier.fillMaxSize()){
@@ -139,7 +140,9 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
             Button(onClick = { multiplePhotoPicker.launch("image/*")}, Modifier.padding(3.dp)) {
                 Text("选择图片")
             }
+
             Column(modifier.verticalScroll(scrollState).fillMaxWidth()){
+                // 遍历显示选择的图片
                 selectedImageUris.forEachIndexed {index, uri ->
                     Image(
                         painter = rememberAsyncImagePainter(uri),
@@ -152,8 +155,11 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
                         Text("移除")
                     }
                 }
+
+                // 生成PDF
                 Button(onClick = {
                     if (selectedImageUris.isEmpty()) return@Button
+
                     scope.launch(Dispatchers.IO) {
                         generatePdfFromImages(context, selectedImageUris)
                     }
@@ -177,7 +183,6 @@ suspend fun generatePdfFromImages(
         // 2. 通过 Coil 获取图片 Bitmap
         val request = ImageRequest.Builder(context)
             .data(uri)
-            .size(1080, 1920) // 适配 PDF 尺寸
             .allowHardware(false)
             .build()
 
