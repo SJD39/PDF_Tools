@@ -42,6 +42,7 @@ android {
 dependencies {
     // Compose 启动器（相册/相机必备）
     implementation(libs.androidx.activity.compose.v193)
+    implementation(libs.androidx.material3)
 
     // 图片加载显示
     implementation(libs.coil.compose)
