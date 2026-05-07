@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -34,21 +36,26 @@ import coil.compose.rememberAsyncImagePainter
 import coil.imageLoader
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.OutputStream
 
 @Composable
 fun Img_to_pdf(modifier: Modifier = Modifier){
+    // 获取上下文
+    val context = LocalContext.current
 
+    // 选择图片
+    val selectedImageUris = remember { mutableStateListOf<Uri>() }
+
+    // 弹窗提示
     val snackbarScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    // 生成PDF
+    val genPdfFromImgScope = rememberCoroutineScope()
 
-    val selectedImageUris = remember { mutableStateListOf<Uri>() }
-
-    // 创建启动器
+    // 创建获取多个内容启动器
     val multiplePhotoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
@@ -56,54 +63,69 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
         Log.i("log", selectedImageUris.toString())
     }
 
+    // 页面布局
     Box(modifier.fillMaxSize()){
         val scrollState = rememberScrollState()
 
         Column{
-            SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(16.dp))
-
             Top_Title("图片 转 PDF")
             Button(onClick = { multiplePhotoPicker.launch("image/*")}, Modifier.padding(3.dp)) {
                 Text("选择图片")
             }
 
-            Button(onClick = {snackbarScope.launch {snackbarHostState.showSnackbar("Snackbar")}}){
-                Text("233")
-            }
-
-            Column(modifier.verticalScroll(scrollState).fillMaxWidth()){
+            Column(modifier
+                .verticalScroll(scrollState)
+                .fillMaxWidth()){
                 // 遍历显示选择的图片
                 selectedImageUris.forEachIndexed {index, uri ->
-                    Image(
-                        painter = rememberAsyncImagePainter(uri),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(200.dp)
-                            .padding(end = 8.dp)
-                    )
-                    Button(onClick = {selectedImageUris.removeAt(index)}, Modifier.padding(3.dp)) {
-                        Text("移除")
+                    Row() {
+                        Image(
+                            painter = rememberAsyncImagePainter(uri),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(200.dp)
+                                .padding(end = 8.dp)
+                        )
+                        Button(onClick = {selectedImageUris.removeAt(index)}, Modifier.padding(3.dp)) {
+                            Text("移除")
+                        }
                     }
                 }
 
                 // 生成PDF
                 Button(onClick = {
+                    // 如果没有选择图片就直接退出
                     if (selectedImageUris.isEmpty()) return@Button
 
-                    scope.launch(Dispatchers.IO) {
-                        generatePdfFromImages(context, selectedImageUris)
+                    // 启动后台线程
+                    genPdfFromImgScope.launch(Dispatchers.IO) {
+
+                        // 运行 generatePdfFromImages ，并传入一个回调，提供弹窗功能
+                        generatePdfFromImages(context, selectedImageUris) { text: String ->
+                            snackbarScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    text
+                                )
+                            }
+                        }
                     }
                 }, Modifier.padding(3.dp)) {
                     Text("生成PDF")
                 }
             }
         }
+
+        // 提示插槽
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(16.dp))
     }
 }
 
 suspend fun generatePdfFromImages(
     context: Context,
-    imageUris: List<Uri>
+    imageUris: List<Uri>,
+    callback: (text: String) -> Job
 ) {
     // 1. 创建 PDF 文档
     val pdfDocument = PdfDocument()
@@ -136,14 +158,15 @@ suspend fun generatePdfFromImages(
     }
 
     // 5. 保存 PDF 到手机
-    savePdfToFile(context, pdfDocument)
+    savePdfToFile(context, pdfDocument, callback)
     pdfDocument.close()
 }
 
 // 保存 PDF 到本地
 private fun savePdfToFile(
     context: Context,
-    pdfDocument: PdfDocument
+    pdfDocument: PdfDocument,
+    callback: (text: String) -> Job
 ) {
     val fileName = "图片转PDF_${System.currentTimeMillis()}.pdf"
     var outputStream: OutputStream? = null
@@ -163,10 +186,10 @@ private fun savePdfToFile(
         outputStream = context.contentResolver.openOutputStream(uri!!)
 
         pdfDocument.writeTo(outputStream)
-        Log.d("PDF", "PDF 生成成功：$fileName")
+        callback("PDF 生成成功：$fileName")
     } catch (e: Exception) {
         e.printStackTrace()
-        Log.e("PDF", "PDF 生成失败：${e.message}")
+        callback("PDF 生成失败：${e.message}")
     } finally {
         outputStream?.close()
     }
