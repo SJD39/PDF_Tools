@@ -78,7 +78,7 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
                 .fillMaxWidth()){
                 // 遍历显示选择的图片
                 selectedImageUris.forEachIndexed {index, uri ->
-                    Row() {
+                    Row {
                         Image(
                             painter = rememberAsyncImagePainter(uri),
                             contentDescription = null,
