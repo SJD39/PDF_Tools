@@ -172,19 +172,23 @@ private fun savePdfToFile(
     var outputStream: OutputStream? = null
 
     try {
-        // Android 10+ 公共存储
+        // 准备文件信息
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
             put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
         }
 
+        // 插入记录
         val uri = context.contentResolver.insert(
             MediaStore.Files.getContentUri("external"),
             values
         )
+
+        // 打开写入流
         outputStream = context.contentResolver.openOutputStream(uri!!)
 
+        // 写入文件
         pdfDocument.writeTo(outputStream)
         callback("PDF 生成成功：$fileName")
     } catch (e: Exception) {
