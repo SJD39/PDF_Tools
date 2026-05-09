@@ -69,27 +69,10 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
 
         Column{
             Top_Title("图片 转 PDF")
-            Button(onClick = { multiplePhotoPicker.launch("image/*")}, Modifier.padding(3.dp)) {
-                Text("选择图片")
-            }
 
-            Column(modifier
-                .verticalScroll(scrollState)
-                .fillMaxWidth()){
-                // 遍历显示选择的图片
-                selectedImageUris.forEachIndexed {index, uri ->
-                    Row {
-                        Image(
-                            painter = rememberAsyncImagePainter(uri),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(200.dp)
-                                .padding(end = 8.dp)
-                        )
-                        Button(onClick = {selectedImageUris.removeAt(index)}, Modifier.padding(3.dp)) {
-                            Text("移除")
-                        }
-                    }
+            Row{
+                Button(onClick = { multiplePhotoPicker.launch("image/*")}, Modifier.padding(3.dp)) {
+                    Text("选择图片")
                 }
 
                 // 生成PDF
@@ -111,6 +94,26 @@ fun Img_to_pdf(modifier: Modifier = Modifier){
                     }
                 }, Modifier.padding(3.dp)) {
                     Text("生成PDF")
+                }
+            }
+
+            Column(modifier
+                .verticalScroll(scrollState)
+                .fillMaxWidth()){
+                // 遍历显示选择的图片
+                selectedImageUris.forEachIndexed {index, uri ->
+                    Row {
+                        Image(
+                            painter = rememberAsyncImagePainter(uri),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(200.dp)
+                                .padding(8.dp)
+                        )
+                        Button(onClick = {selectedImageUris.removeAt(index)}, Modifier.padding(3.dp)) {
+                            Text("移除")
+                        }
+                    }
                 }
             }
         }
